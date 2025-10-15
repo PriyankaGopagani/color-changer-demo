@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Color Changer — with Hex Display</title>
+  <style>
+    :root {
+      --bg: #111827;
+      --card: rgba(255,255,255,0.88);
+      --text: #111827;
+      --muted: #6b7280;
+      --ring: #3b82f6;
+      --btn: #111827;
+      --btn-text: #ffffff;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+    }
+    .wrap {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      transition: background-color 180ms ease;
+    }
+    .panel {
+      width: min(680px, 92vw);
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow:
+        0 10px 20px rgba(0,0,0,0.15),
+        0 6px 6px rgba(0,0,0,0.10);
+      padding: 20px 22px;
+      backdrop-filter: saturate(150%) blur(6px);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .title {
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      color: var(--text);
+      font-size: 18px;
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .preview {
+      position: relative;
+      border-radius: calc(var(--radius) - 2px);
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.06);
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      transition: background-color 180ms ease;
+    }
+    .hex-display {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.82);
+      color: #111827;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.06);
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: 0.6px;
+      user-select: text;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .hex-display[data-contrast="light"] {
+      background: rgba(255,255,255,0.85);
+      color: #111827;
+    }
+    .hex-display[data-contrast="dark"] {
+      background: rgba(17,24,39,0.85);
+      color: #f9fafb;
+      border-color: rgba(255,255,255,0.14);
+    }
+    .copy-btn {
+      appearance: none;
+      border: 0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-weight: 600;
+      background: var(--btn);
+      color: var(--btn-text);
+      cursor: pointer;
+      transition: transform 80ms ease, opacity 80ms ease, background 150ms ease;
+    }
+    .copy-btn:hover { transform: translateY(-1px); }
+    .copy-btn:active { transform: translateY(0); opacity: 0.9; }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .input {
+      width: 100%;
+      font-size: 15px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.12);
+      outline: none;
+      transition: box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
+      background: #ffffff;
+    }
+    .input:focus {
+      border-color: var(--ring);
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
+    }
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-weight: 700;
+      background: #111827;
+      color: white;
+      cursor: pointer;
+      transition: transform 80ms ease, opacity 80ms ease, background 150ms ease;
+      white-space: nowrap;
+    }
+    .btn.secondary {
+      background: #374151;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); opacity: 0.92; }
+    .small {
+      font-size: 12px;
+    }
+    .inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .color-input {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+    .hint {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+    @media (max-width: 560px) {
+      .controls {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      .hex-display {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="wrap">
+    <div class="panel" role="region" aria-label="Color changer">
+      <div class="header">
+        <div>
+          <div class="title">Color Changer</div>
+          <div class="muted">Pick, randomize, and see the current hex color code.</div>
+        </div>
+        <button id="randomBtnTop" class="btn small" type="button" title="Random color">Random</button>
+      </div>
+
+      <div id="preview" class="preview" aria-live="polite" aria-label="Color preview with current hex">
+        <div class="hex-display" id="hexDisplay" data-contrast="light">
+          <span id="hexText">#000000</span>
+          <button id="copyBtn" class="copy-btn" type="button" aria-label="Copy hex code">Copy</button>
+        </div>
+      </div>
+
+      <div class="controls" style="margin-top:14px">
+        <input id="hexInput" class="input" placeholder="#RRGGBB or #RGB" aria-label="Enter hex color" />
+        <input id="nativeColor" class="color-input" type="color" aria-label="Native color picker" />
+        <button id="applyBtn" class="btn" type="button">Apply</button>
+      </div>
+
+      <div class="row">
+        <button id="randomBtn" class="btn secondary" type="button">Random Color</button>
+        <div class="inline muted">
+          <input id="autoRefresh" type="checkbox" />
+          <label for="autoRefresh">Auto-refresh text color for contrast</label>
+        </div>
+      </div>
+
+      <div class="hint">
+        Tips: Click "Random Color", use the native color picker, or type a hex and press Enter. The current hex code is always shown above and can be copied.
+      </div>
+      <div class="sr-only" aria-live="polite" id="liveMessage"></div>
+    </div>
+  </div>
+
+  <script>
+    const wrap = document.querySelector('.wrap');
+    const preview = document.getElementById('preview');
+    const hexDisplay = document.getElementById('hexDisplay');
+    const hexText = document.getElementById('hexText');
+    const copyBtn = document.getElementById('copyBtn');
+    const hexInput = document.getElementById('hexInput');
+    const nativeColor = document.getElementById('nativeColor');
+    const applyBtn = document.getElementById('applyBtn');
+    const randomBtn = document.getElementById('randomBtn');
+    const randomBtnTop = document.getElementById('randomBtnTop');
+    const liveMessage = document.getElementById('liveMessage');
+    const autoRefresh = document.getElementById('autoRefresh');
+
+    // Utilities
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+    function hexToRgb(hex) {
+      const m = /^#?([a-f\d]{3}|[a-f\d]{6})$/i.exec(hex);
+      if (!m) return null;
+      let h = m[1];
+      if (h.length === 3) {
+        h = h.split('').map(c => c + c).join('');
+      }
+      const int = parseInt(h, 16);
+      return {
+        r: (int >> 16) & 255,
+        g: (int >> 8) & 255,
+        b: int & 255
+      };
+    }
+
+    function normalizeHex(input) {
+      if (!input) return null;
+      let s = String(input).trim();
+      if (s[0] !== '#') s = '#' + s;
+      const m = /^#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/.test(s);
+      if (!m) return null;
+      // expand to 6 and uppercase
+      if (s.length === 4) {
+        s = '#' + s.slice(1).split('').map(c => c + c).join('');
+      }
+      return s.toUpperCase();
+    }
+
+    function randomHex() {
+      const n = Math.floor(Math.random() * 0xFFFFFF);
+      return ('#' + n.toString(16).padStart(6, '0')).toUpperCase();
+    }
+
+    function getContrastText(rgb) {
+      // Relative luminance and WCAG contrast
+      const [r, g, b] = [rgb.r, rgb.g, rgb.b].map(v => {
+        v /= 255;
+        return v <= 0.03928 ? v/12.92 : Math.pow((v + 0.055)/1.055, 2.4);
+      });
+      const L = 0.2126*r + 0.7152*g + 0.0722*b;
+      return L > 0.179 ? 'dark' : 'light'; // if background is light -> use dark text, else light text
+    }
+
+    function setColor(hex, announce = true) {
+      const norm = normalizeHex(hex);
+      if (!norm) return false;
+
+      const rgb = hexToRgb(norm);
+      const contrast = getContrastText(rgb);
+
+      // Update background and preview
+      wrap.style.backgroundColor = norm;
+      preview.style.backgroundColor = norm;
+
+      // Update text chip contrast
+      hexDisplay.setAttribute('data-contrast', contrast);
+
+      // Update displays/inputs
+      hexText.textContent = norm;
+      nativeColor.value = norm;
+      if (announce) {
+        liveMessage.textContent = `Color set to ${norm}`;
+      }
+      return true;
+    }
+
+    function gentlyShake(el) {
+      el.animate(
+        [
+          { transform: 'translateX(0)' },
+          { transform: 'translateX(-6px)' },
+          { transform: 'translateX(6px)' },
+          { transform: 'translateX(0)' },
+        ],
+        { duration: 220, easing: 'ease-in-out' }
+      );
+    }
+
+    // Events
+    applyBtn.addEventListener('click', () => {
+      const ok = setColor(hexInput.value);
+      if (!ok) {
+        hexInput.focus();
+        gentlyShake(hexInput);
+        liveMessage.textContent = 'Invalid hex. Use #RRGGBB or #RGB.';
+      }
+    });
+
+    hexInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        applyBtn.click();
+      }
+    });
+
+    nativeColor.addEventListener('input', (e) => {
+      // live update while dragging if autoRefresh checked, else just update the input preview
+      if (autoRefresh.checked) setColor(e.target.value, false);
+    });
+    nativeColor.addEventListener('change', (e) => setColor(e.target.value));
+
+    function randomize() {
+      const h = randomHex();
+      setColor(h);
+      hexInput.value = h;
+    }
+    randomBtn.addEventListener('click', randomize);
+    randomBtnTop.addEventListener('click', randomize);
+
+    copyBtn.addEventListener('click', async () => {
+      const txt = hexText.textContent.trim();
+      try {
+        await navigator.clipboard.writeText(txt);
+        copyBtn.textContent = 'Copied';
+        setTimeout(() => (copyBtn.textContent = 'Copy'), 900);
+        liveMessage.textContent = `Copied ${txt}`;
+      } catch {
+        // fallback
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(hexText);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        try { document.execCommand('copy'); } catch {}
+        sel.removeAllRanges();
+        copyBtn.textContent = 'Copied';
+        setTimeout(() => (copyBtn.textContent = 'Copy'), 900);
+      }
+    });
+
+    // Init
+    (function init() {
+      const start = randomHex();
+      setColor(start, false);
+      hexInput.value = start;
+      nativeColor.value = start;
+      autoRefresh.checked = true;
+    })();
+  </script>
+</body>
+</html>
